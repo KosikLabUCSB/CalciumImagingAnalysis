@@ -18,21 +18,47 @@
 %   function loads the needed filenames and paths in order to conduct its
 %   analysis.
 
-%% Source path
+%% Source path -- Change this to your own source directory (where your videos are)
+
+srcDir = "/MATLAB Drive/2023_11_20_PreKetGreg";
 
 % Full path to input parent folder
-CONFIG.srcDir = '~/Desktop/CalciumSignalingData/2023_12_7_PascaControl';
-
+CONFIG.srcDir = srcDir;
 
 %% Ouput paths
 
 % Full path to output report files
-CONFIG.outputReports= "~/Desktop/CalciumSignalingData/2023_12_7_PascaControl/Reports";
+outReports = "Reports";
 
-% Full path to output data .mat file (don't include filename)
-CONFIG.outputData = "~/Desktop/CalciumSignalingData/2023_12_7_PascaControl/Data";
+if ~exist(srcDir+"/"+outReports,'dir')
+       mkdir(srcDir+"/"+outReports)
+       CONFIG.outputReports= srcDir + "/" + outReports;
+
+else
+    CONFIG.outputReports= srcDir + "/" + outReports;
+end
+    
+
+% Full path to output data .mat file
+outData= "Data";
+
+if ~exist(srcDir+"/"+outData,'dir')
+       mkdir(srcDir+"/"+outData)
+       CONFIG.outputData= srcDir + "/" + outData;
+
+else
+    CONFIG.outputData= srcDir + "/" + outData;
+end
 
 % Full path to output figures
-CONFIG.outputFigures = "~/Desktop/CalciumSignalingData/2023_12_7_PascaControl/Figures";
+outFigs = "Figures";
+
+if ~exist(srcDir+"/"+outFigs,'dir')
+       mkdir(srcDir+"/"+outFigs)
+       CONFIG.outputFigures= srcDir + "/" + outFigs;
+
+else
+    CONFIG.outputFigures= srcDir + "/" + outFigs;
+end
 
 
