@@ -146,6 +146,30 @@ for q = 1:length(filenames)
     
     Cn =  correlation_image(M_nr); %reshape(P.sn,d1,d2);  %max(Y,[],3); %std(Y,[],3); % image statistic (only for display purposes)
     
+   % test canny edge detector
+    figure();
+
+    im =imagesc(Cn,[min(Cn(:)),max(Cn(:))]);
+    im2 = double(Cn(pad:d1-pad, pad:d2-pad));
+    BW1 = edge(im2,'Canny', 0.11);
+
+    figure();
+    imshow(BW1);
+
+    % test hough transform
+    [H,theta,rho] = hough(BW1);
+    P = houghpeaks(H,70,'threshold',ceil(0.08*max(H(:))));
+    lines = houghlines(BW1,theta,rho,P,'FillGap',3,'MinLength',1);
+
+    hold on
+
+    max_len = 0;
+
+    for k = 1:length(lines)
+       xy = [lines(k).point1; lines(k).point2];
+       plot(xy(:,1),xy(:,2),'LineWidth',1,'Color','black');
+    end
+    
     f1 = figure('visible', 'off');
         imagesc(Cn);
         axis equal; axis tight; hold all;

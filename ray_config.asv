@@ -20,7 +20,7 @@
 
 %% Source path -- Change this to your own source directory (where your videos are)
 
-srcDir = "/Users/giffordr/Desktop/2024_2_16_PrimaryNeuron_gCaMP_AstroctyeCoculture/NoAstrocyteControl";
+srcDir = "/Users/giffordr/Desktop/2024_2_16_PrimaryNeuron_gCaMP_AstroctyeCoculture/WildTypeControl";
 
 % Full path to input parent folder
 CONFIG.srcDir = srcDir;
