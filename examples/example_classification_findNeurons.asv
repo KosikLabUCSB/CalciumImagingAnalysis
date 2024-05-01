@@ -1,0 +1,67 @@
+% example_classificaiton_findNeurons.m
+% --------------------------------------
+% Example code for finding putative neurons
+% findNeurons.m
+%
+% This script covers the following steps:
+%   - Clearing workspace
+%   - Instantiating CalImgAnalysis object
+%   - Loading example data
+%   - Preprocessing
+%   - Finding Neurons
+%   - Plot Traces
+%   - Plot Spike Train
+
+% Ray - April, 2024
+
+% Clear console, figures, and workspace
+clear all; close all; clc
+
+% Make CalImgAnalysis object
+CIA = CalImgAnalysis;
+
+% -------------------------------------------------------------------------
+% Identify Directory to File -- use the code below to auto populate the
+% path to your tif file
+
+%[filename, pathname] = uigetfile(...    
+%   {'*.jpg; *.JPG; *.jpeg; *.JPEG; *.img; *.IMG; *.tif; *.TIF; *.tiff, *.TIFF','Supported Files (*.jpg,*.img,*.tiff,)'; ...
+%    '*.tif','tif Files (*.tif)';...
+%    '*.TIF','TIF Files (*.TIF)';...
+%    '*.tiff','tiff Files (*.tiff)';...
+%    '*.TIFF','TIFF Files (*.TIFF)'},...    
+%    'MultiSelect', 'on');
+
+% Import Data
+%path = strcat(pathname,filename);
+% ------------------------------------------------------------------------
+
+% Load example data
+filename = 'PGRNKO_Example.tif';
+[tempFolder, baseFileName, extension] = fileparts(filename);
+
+Y = read_file(filename);
+
+% Normalize data
+[P,yNorm] = CIA.Preprocessing.normalize(Y);
+
+% Find all neurons
+[spikeTrain, trace] = CIA.Classification.findNeurons(yNorm, P, filename);
+
+% Create data struct
+data.trace = trace;
+data.spikeTrain = spikeTrain;
+
+% Ou
+saveToPath = strcat(folder, '/', baseFileName, '.mat');
+save(saveToPath, 'data');
+
+%%  traces
+CIA.Visualization.plotTraces(trace, spikeTrain);
+
+%% Visualization: spike train
+CIA.Visualization.plotSpikeTrain(trace, spikeTrain, 'heatmap', true);
+
+
+
+
