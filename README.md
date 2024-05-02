@@ -1,13 +1,15 @@
 # Calcium Imaging Analysis
 
-<div style="display: flex; width: 100%;">
-   <div style="flex: 1; padding-right: 5px;">
-     <img src="/exampleTraceOutput.png" alt="Trace" style="width: 100%; height: auto;">
-   </div>
-   <div style="flex: 1; padding-left: 5px;">
-     <img src="/exampleRasterOutput.png" alt="Raster" style="width: 100%; height: auto;">
-   </div>
-</div>
+<table style="width: 100%;">
+   <tr>
+      <td style="width: 50%;">
+        <img src="/exampleTraceOutput.png" alt="Trace" style="width: 600px; height: 400px;">
+      </td>
+      <td style="width: 50%;">
+        <img src="/exampleRasterOutput.png" alt="Raster" style="width: auto; height: 400px;">
+      </td>
+   </tr>
+</table>
 
 
 ## Description
