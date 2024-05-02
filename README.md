@@ -61,7 +61,3 @@ Example function calls:
 ## Notes
 - The configuration file (`yourname_config.m`) should be tailored to your specific directory structure and file names.
 - Ensure all dependencies are correctly installed and accessible in MATLAB's path.
-
-## Creator and Maintainer
-- Creator: Ray Gifford (October 2023)
-- Maintainer: Ray Gifford (up until February 2024)
