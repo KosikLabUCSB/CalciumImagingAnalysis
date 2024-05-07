@@ -1,7 +1,7 @@
-function [spikeTrain, trace] = findNeurons(obj, Y, P, filename, varargin)
+function data = findNeurons(obj, Y, P, filename, varargin)
 % -------------------------------------------------------------------------
 % CIA = CalImgAnalysis;
-% C = CIA.Analysis.findNeurons(X, varargin)
+% C = CIA.Analysis.findNeurons(Y,P,filename, varargin)
 % -------------------------------------------------------------------------
 % Creator: Ray Gifford (October 2023)
 % Maintainer: Ray Gifford up until May 2024
@@ -11,30 +11,21 @@ function [spikeTrain, trace] = findNeurons(obj, Y, P, filename, varargin)
 % file containing spike train and deconvolved calcium traces
 %
 % Input (required)
-% - configFile: Name of your config file, as a string (enclosed in single
-%   quotes).
+% - Y: .
+% - P: .
+% - filename: .
 %
 % Input (optional)
-% - saveFigures: Boolean of whether to save out each individual figure as a .png file. 
+% - isVolume: Boolean of whether to save out each individual figure as a .png file. 
 %   If empty or not entered, the function will default to FALSE. These
 %   figures will otherwise be saved as part of a report file.
 %
 % Outputs:
-% - The function outputs a report file containing summary figures, and a
-% data struct containing the deconvolved traces of identified neurons, and
-% spike train to a into the "outputReports" and "outputData" directories,
-% respectively, as specified in configFile.m. If saveFigures is set to
-% TRUE, a .png for every analysis step will be saved into the
-% "outputFigures" directory as specified in the configFile.m. If set to
-% FALSE, no figures will be saved. Default is FALSE.
+% - .
 %
 % Example function calls:
-% - Save figures: calciumImagingAnalysis('ray_config.m', 1);
-% - Don't save figures: calciumImagingAnalysis('ray_config.m');
-
-
-% adjustable parameters
-
+%
+%
 
 % start a local cluster for parallel processing
 gcp;
@@ -47,70 +38,26 @@ addpath(genpath('ca_source_extraction'));  % add packages to matlab path
 addpath(genpath('NoRMCorre'));
 
 % make sure at least one input was provided
-assert(nargin >= 1, 'At least one input (config file name as string) is required.')
+assert(nargin >= 3, 'At least three inputs (Y, P, and filename) are required.')
 
+ip = inputParser;
 
-% if config filename doesn't end in '.m', append it.
-%if ~strcmp(configFile(end-1:end), '.m')
-%    disp('You did not inude the full file name... but I understood what you meant'); 
-%    configFile = [configFile '.m'];
-%end
+% set default values
+ip.FunctionName = 'findNeurons';
+ip.addRequired('Y');
+ip.addRequired('P',@isstruct);
+ip.addRequired('filename',@ischar);
+ip.addParameter('isVolume', false, @(x) validateattributes(x,{'logical'}, {'nonempty'}));
+ip.addParameter('nSlices',[], @(x) validateattributes(x,{'int'}, {'nonempty'}));
 
-% if saveFigures input not entered or empty, set to 0
-%if nargin < 2 || isempty(saveFigures)
- %   saveFigures = 0; end
+% parse user inputs
+parse(ip, Y, P, filename, varargin{:});
 
-% Run the config script to get the CONFIG struct.
-%run(configFile)
+if ~ip.Results.isVolume
 
-%addpath(CONFIG.srcDir); % add data folder path
-%filenames = ["3_PreKet010", "4_PreKet007", "5_PreKet006", "6_PreKet005", "7_PreKet004", "9_PreKet003", "10_PreKet"]; % create list of all filenames to iterate through
-
-%filelist = dir(fullfile(CONFIG.srcDir, '**/*.tif*'));
-%filenames = string({filelist(:).name});
-
-
-%outputReportPath = CONFIG.outputReports;
-%outputDataPath = CONFIG.outputData;
-%outputFiguresPath = CONFIG.outputFigures;
-
-%% process video
     
-    % initiate output report file for current video
-    %rpt = Report(CONFIG.outputReports + "/" + baseFileName,'pdf');
-    %add(rpt,TitlePage('Title',"Pictorial Overview of Analysis for Video: "+baseFileName,'Author','Ray Gifford'));
-    %add(rpt,TableOfContents);
-    
-    % read file and determine dynamic range
-    %Y = read_file(path);
     [d1,d2,T1] = size(Y);    % dimensions of file
-    %Y = Y - min(Y(:));      % remove negative offset
 
-    %minY = quantile(Y(1:9e6),0.0005);
-    %maxY = quantile(Y(1:9e6),1-0.0005);
-   
-    % perform motion correction (start with rigid) -- This shouldn't do much if the slice is stuck nicely to the glass
-    % parameters motion correction
-    % 'd1','d2': size of FOV
-    % 'bin_width': how often to update the template
-    % 'max_shift': maximum allowed rigid shift
-
-    %options_rg = NoRMCorreSetParms('d1',d1,'d2',d2,'bin_width',50,'max_shift',10);
-
-    %[M_rg,shifts_rg,template_rg] = normcorre_batch(Y,options_rg);
-
-    
-    % downsample video
-    %tsub = 5;   % downsampling factor (only for display purposes)
-    %Y_sub = downsample_data(Y,'time',tsub);
-
-    
-    % write downsampled video file
-     %v = VideoWriter("downSampled_video_AVI", 'Grayscale AVI');
-     %open(v)
-     %writeVideo(v,mat2gray(Y_sub));
-     
-     
     % Set parameters for calcium image analysis
         K = 70;                                           % number of components to be found
         tau = 3;                                          % std of gaussian kernel (half size of neuron) 
@@ -126,35 +73,11 @@ assert(nargin >= 1, 'At least one input (config file name as string) is required
             'space_thresh',0.5,...                      % space correlation threshold
             'cnn_thr',0.2,...                           % threshold for CNN classifier
             'make_avi', 1, 'name', filename);           % can be used to make avi, doesn't work super well
-    
-    % data pre-processing
-    %[P,M_nr] = preprocess_data(M_rg,p);
+
     
     % fast initialization of spatial components using greedyROI and HALS
     [Ain,Cin,bin,fin,center] = initialize_components(double(Y),K,tau,options,P);  % initialize
-
-    % output figure displaying centers of found components to report file
-    %ch = Chapter('ROI Centroids After Fast Initialization'); % create report chapter
-    
-    %Cn =  correlation_image(M_nr); %reshape(P.sn,d1,d2);  %max(Y,[],3); %std(Y,[],3); % image statistic (only for display purposes)
-    
-    %f1 = figure('visible', 'off');
-    %    imagesc(Cn);
-    %    axis equal; axis tight; hold all;
-    %    scatter(center(:,2),center(:,1),'mo');
-    %    title('Center of ROIs found from initialization algorithm');
-    %    drawnow;
-    
-    %fig1 = Figure(f1);
-    %fig1.Snapshot.Caption = 'Test Caption for this Figure';
-    %fig1.Snapshot.Height = '7in';
-    %fig1.Snapshot.Width = '7in';
-    %fig1.Snapshot.ScaleToFit = true;
-    
-    %add(ch,fig1); % add figure to chapter
-    %add(rpt,ch);        % add chapter to report
-    
-    
+        
     % update spatial components
     d = d1*d2; 
     Yr = reshape(Y,d,T1);
@@ -182,26 +105,9 @@ assert(nargin >= 1, 'At least one input (config file name as string) is required
 
     % select components --- regardless of whether you have CNN setup, move forward
     keep = (ind_corr | ind_cnn) & ind_exc;
-
-    % display kept and discarded components
-    %ch = Chapter('Kept and Discarded Components'); % create report chapter
     
     A_keep = A(:,keep);
     C_keep = C(keep,:);
-    
-    %f2 = figure('visible', 'off');
-    %    subplot(121); montage(extract_patch(A(:,keep),[d1,d2],[30,30]),'DisplayRange',[0,0.15]);
-    %        title('Kept Components');
-    %    subplot(122); montage(extract_patch(A(:,~keep),[d1,d2],[30,30]),'DisplayRange',[0,0.15])
-    %        title('Discarded Components');
-    
-    %fig2 = Figure(f2);
-    %fig2.Snapshot.Caption = 'Test Caption for this Figure';
-    %fig2.Snapshot.Height = '7in';
-    %fig2.Snapshot.Width = '7in';
-    
-    %add(ch,fig2);       % add figure to chapter
-    %add(rpt,ch);        % add chapter to report
     
     % merge found components
     P.merg_thr = 0.95;
@@ -211,65 +117,15 @@ assert(nargin >= 1, 'At least one input (config file name as string) is required
     Pm.p = P.p;    % restore AR value
     [A2,b2,C2] = update_spatial_components(Yr,Cm,f,[Am,b],Pm,options);
     [C2,f2,P2,S2,YrA2] = update_temporal_components(Yr,A2,b2,C2,f,Pm,options);
-    
-    % display merged component example
-    %ch = Chapter('Temporal Merging'); % create report chapter
-    
-    %display_merging = 1; % flag for displaying merging example
-    
-    %if and(display_merging, ~isempty(merged_ROIs))
-    %    i = 1; %randi(length(merged_ROIs));
-    %    ln = length(merged_ROIs{i});
-        
-        %f3 = figure('visible', 'off');
-            %set(gcf,'Position',[300,300,(ln+2)*300,300]);
-           % for j = 1:ln
-           %     subplot(1,ln+2,j); imagesc(reshape(A_keep(:,merged_ROIs{i}(j)),d1,d2)); 
-           %         title(sprintf('Component %i',j),'fontsize',16,'fontweight','bold'); axis equal; axis tight;
-           % end
-           % subplot(1,ln+2,ln+1); imagesc(reshape(Am(:,K_m-length(merged_ROIs)+i),d1,d2));
-           %         title('Merged Component','fontsize',16,'fontweight','bold');axis equal; axis tight; 
-           % subplot(1,ln+2,ln+2);
-           %     plot(1:T1,(diag(max(C_keep(merged_ROIs{i},:),[],2))\C_keep(merged_ROIs{i},:))'); 
-            %    hold all; plot(1:T1,Cm(K_m-length(merged_ROIs)+i,:)/max(Cm(K_m-length(merged_ROIs)+i,:)),'--k')
-            %    title('Temporal Components','fontsize',16,'fontweight','bold')
-            %drawnow;
-            
-            %fig3 = Figure(f3);
-            %fig3.Snapshot.Caption = 'Test Caption for this Figure';
-            %fig3.Snapshot.Height = '7in';
-            %fig3.Snapshot.Width = '7in';
-            %add(ch,fig3);       % add figure to chapter
-            %add(rpt,ch);        % add chapter to report
-    %end
-    
-    
-    
+       
     % refine estimates excluding rejected components
     Pm.p = P.p;    % restore AR value
     [A2,b2,C2] = update_spatial_components(Yr,Cm,f,[Am,b],Pm,options);
     [C2,f2,P2,S2,YrA2] = update_temporal_components(Yr,A2,b2,C2,f,Pm,options);
     
-    % plot contour
-    %ch = Chapter('Contour of Spatial Footprints'); % create report chapter
-    
     [A_or,C_or,S_or,P_or] = order_ROIs(A2,C2,S2,P2); % order components
     K_m = size(C_or,1);
     [C_df,~] = extract_DF_F(Yr,A_or,C_or,P_or,options); % extract DF/F values (optional)
-    
-    
-    
-    %f4 = figure('visible', 'off');
-    %[Coor,json_file] = plot_contours(A_or,Cn,options,1); % contour plot of spatial footprints
-    %savejson('jmesh',json_file,'filename');        % optional save json file with component coordinates (requires matlab json library)
-    
-    %fig4 = Figure(f4);
-    %fig4.Snapshot.Caption = 'Test Caption for this Figure';
-    %fig4.Snapshot.Height = '7in';
-    %fig4.Snapshot.Width = '7in';
-    
-    %add(ch,fig4); % add figure to chapter
-    %add(rpt,ch);        % add chapter to report
     
     
     % detrend fluorescence and extract DF/F values
@@ -291,90 +147,132 @@ assert(nargin >= 1, 'At least one input (config file name as string) is required
     for i = 1:nNeurons
         [C_dec(i,:),S(i,:),kernels{i}] = deconvCa(F_dff(i,:), [], min_sp, true, false, [], 20, [], 0);
     end
+
+    centerM = com(A_or,d1,d2);  
+    centerM = round(centerM);
     
-    
-    % plot a random component
-    %ch = Chapter('Traces of Example Random Component'); % create report chapter
-    %i = randi(nNeurons);
-
-    %f5 = figure('visible', 'off');
-    %plot(1:T,F_dff(i,:),'--k'); %plot DF/F trace
-    %hold all; 
-    %plot(1:T,C_dec(i,:),'r','linewidth',2); %plot deconvoled signal
-    %spt = find(S(i,:));
-
-   % if spt(1) == 1 
-   %    spt(1) = []; 
-   % end
-
-    %hold on; 
-    %scatter(spt,repmat(-0.25,1,length(spt)),'m*') % plot spikes
-    %title(['Component ',num2str(i)]);
-    %legend('Fluorescence DF/F','Deconvolved','Spikes')
-    
-    %fig5 = Figure(f5);
-    %fig5.Snapshot.Caption = 'Test Caption for this Figure';
-    %fig5.Snapshot.Height = '7in';
-    %fig5.Snapshot.Width = '7in';
-    
-   % add(ch,fig5); % add figure to chapter
-   % add(rpt,ch);        % add chapter to report
-    
-    
-    % plot deconvolved traces and spike raster overlayed
-    %ch = Chapter('Traces and Raster for All Found Components'); % create report chapter
-    %f6 = figure('visible','off');
-    %g = gca;
-
-   % xlim([100 T]);             % change limit for X to exclude start of recording
-     % change limit for Y to trim to number of chosen neurons
-
-    %title('Deconvolved Traces and Spike Raster Overlay');
-    %xlabel('Time (Frames)');
-    %ylabel('Neuron');
-    %f6.Position = [200 200 2000 1000];
-    %g.FontSize = 20;
-    %g.TitleFontSizeMultiplier = 1.1;
-
-    %hold on;
-
-    %for i = 1:nNeurons
-
-      %  tempDec = C_dec*3;
-      %  tempS = S;
-      %  spt = find(tempS(i,:));
-
-
-      %  plot(1:T,tempDec(i,:)+i,'b','linewidth',1); %plot deconvoled signal
-      %  hold on;
-      %  scatter(spt,repmat(-0.25,1,length(spt))+i, 18,'r*') % plot spikes
-      %  hold on;
-      %  xline(115, '--k')  % for potential burst marker
-       
-       % ylim([0 size(tempS,1)+2]);
-      %  hold on;
-      %  legend('Deconvolved','Spike', 'Burst');
-
-    %end
-    %fig6 = Figure(f6);
-    %fig6.Snapshot.Caption = 'Test Caption for this Figure';
-    %fig6.Snapshot.Height = '10in';
-    %fig6.Snapshot.Width = '10in';
-    %add(ch,fig6); % add figure to chapter
-    %add(rpt,ch);        % add chapter to report
-
-    % create output struct
-    spikeTrain = S>0;
-    trace = C_dec;
-    
-    data.spikeTrain = spikeTrain;
     data.trace = C_dec;
-    %coordinates = 
+    data.rawTrace = F_dff;
+    data.spikeTrain = S>0;
+    data.centers = centerM;
+    
 
     % output mat file with struct
-    %save(filename, 'data');
+    % save(filename, 'data');
     
-    % close report to save
-    %close(rpt);
+% else if this is a volume
+else
+    
+
+if ~isfield(ip.Results,'nSlices') || isempty(ip.Results.nSlices); nSlices = input('What is the total number of slices? \n'); else nSlices = ip.Results.nSlices; end
+
+assert(~mod(size(Y,3),nSlices), "The number of slices specified does not seem accurate, total number of frames is not divisible by nSlices.");
+
+nFrames = size(Y,3)/nSlices;
+
+Y = double(reshape(Y, [512,512,12,200])); % reshape Y
+
+
+
+% Define dimensions and size of dataset
+
+if ndims(Y) == 4
+    [d1,d2,d3,T] = size(Y);                            % dimensions of dataset
+else
+    disp('data was not shaped correctly');
+end
+
+d = d1*d2*d3;                                          % total number of pixels
+
+% Set parameters
+
+K = 250;                                          % number of components to be found
+tau = [3,3,1];                                    % std of gaussian kernel (size of neuron) 
+p = 0;                                            % order of autoregressive system (p = 0 no dynamics for slow imaging rate)
+merge_thr = 0.95;                                 % merging threshold
+
+options = CNMFSetParms(...                      
+    'd1',d1,'d2',d2,'d3',d3,...                  % dimensions of datasets
+    'search_method','dilate',...                 % search locations when updating spatial components
+    'maxIter',15,...                             % number of NMF iterations during initialization
+    'temporal_iter',2,...                        % number of block-coordinate descent steps 
+    'fudge_factor',0.98,...                      % bias correction for AR coefficients
+    'merge_thr',merge_thr,...                    % merging threshold
+    'gSig',tau,'nb',1 ...
+    );
+%     'deconv_method','constrained_foopsi',...     % activity deconvolution method
+
+%reshape(P.sn,d1,d2,d3)
+
+[P,Y] = preprocess_data(Y,p);
+
+dims = size(Y);
+Cn = correlation_image_3D(double(Y), [], dims); % for large datasets change with reshape(P.sn,d1,d2,d3), %max(Y,[],3); %std(Y,[],3); % image statistic (only for display purposes)
+
+% fast initialization of spatial components using greedyROI and HALS
+
+[Ain,Cin,bin,fin,center] = initialize_components(Y,K,tau,options,P);  % initialize
+
+% display centers of found components
+%plotCenteroverY(Cn, center, [d1,d2,d3]);  % plot found centers against max-projections of background image
+
+% update spatial components
+Yr = reshape(Y,d,T);
+[A,b,Cin] = update_spatial_components(Yr,Cin,fin,[Ain,bin],P,options);
+
+% update temporal components
+P.p = 0;
+[C,f,P,S,YrA] = update_temporal_components(Yr,A,b,Cin,fin,P,options);
+
+[Am,Cm,K_m,merged_ROIs,Pm,Sm] = merge_components(Yr,A,b,C,f,P,S,options);
+
+[A2,b2,Cm] = update_spatial_components(Yr,Cm,f,[Am,b],Pm,options);
+%
+
+[C2,f2,P2,S2,YrA2] = update_temporal_components(Yr,A2,b2,Cm,f,Pm,options);
+
+centerM = com(A2,d1,d2,d3);
+
+if size(centerM,2) == 2
+    centerM(:,3) = 1;
+end
+
+centerM = round(centerM);
+%plotCenteroverY(Cn, centerM, [d1,d2,d3]);  % plot found centers against max-projections of background image
+
+[C_df,~] = extract_DF_F(Yr,A2,C2,P2,options);
+
+% detrend fluorescence and extract DF/F values
+df_percentile = 30;
+window = 1000; 
+
+F = diag(sum(A2.^2))*(C2 + YrA2);  % fluorescence
+Fd = prctfilt(F,df_percentile,window);                      % detrended fluorescence
+Bc = prctfilt((A2'*b)*f2,30,1000,300,0) + (F-Fd);       % background + baseline for each component
+F_dff = Fd./Bc;
+
+% deconvolve data
+nNeurons = size(F_dff,1);
+C_dec = zeros(size(F_dff));
+S = zeros(size(F_dff));
+kernels = cell(nNeurons,1);
+min_sp = 4;    % find spikes resulting in transients above min_sp x noise level
+
+for i = 1:nNeurons
+        [C_dec(i,:),S(i,:),kernels{i}] = deconvCa(F_dff(i,:), [], min_sp, true, false, [], 20, [], 0);
+end
+
+data.trace = C_dec;
+data.rawTrace = F_dff;
+data.spikeTrain = S>0;
+data.centers = centerM;
+
+
+end
+
+
+
+    
+
 end
 

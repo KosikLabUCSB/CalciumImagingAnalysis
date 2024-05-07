@@ -64,7 +64,7 @@ ip.addParameter('traceWidth', 1, @(x) assert(isnumeric(x), ...
 parse(ip, trace, spikeTrain, varargin{:});
 
 % new figure
-figure();
+%figure();
 
 % style figure
 img = gca;

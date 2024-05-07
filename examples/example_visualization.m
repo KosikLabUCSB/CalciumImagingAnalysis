@@ -17,6 +17,10 @@ clear all; close all; clc;
 % Load example data
 load('PGRNKO_Example.mat');
 
+% add custom data
+% data = uigetfile;
+% load(data);
+
 % Instantiate CalImgAnalysis object
 CIA = CalImgAnalysis;
 

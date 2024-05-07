@@ -125,7 +125,7 @@ for i = 1:nNeurons
         ylabel(a,'Rescaled Flourescent Intensity','FontSize',14);
 
     else
-        scatter(y', tempSpikeTrain2*i, [], "|", 'Color','black','LineWidth', ip.Results.markerWidth);
+        scatter(y', tempSpikeTrain2*i, [], "|", 'black','LineWidth', ip.Results.markerWidth);
         hold on;
      end
 
