@@ -54,6 +54,7 @@ ip.addParameter('lineWidth', 1, @(x) assert(isnumeric(x), ...
     'lineWidth must be a numeric value'));
 ip.addParameter('fontSize', 20, @(x) isnumeric(x));
 ip.addParameter('lineColor', 'black');
+ip.addParameter('chartTitle','Flourescent traces for each neuron over time');
 ip.addParameter('traceColor', [128 128 128]/255);
 ip.addParameter('traceScale', 3, @(x) assert(isnumeric(x), ...
     'traceScale must be a numeric value'));
@@ -73,7 +74,7 @@ set(gca,'FontSize',ip.Results.fontSize,'color',[1 1 1]);
 img.TitleFontSizeMultiplier = 1.1; % make title larger
 
 % label figure
-title('Flourescent traces for each neuron over time');
+title(ip.Results.chartTitle);
 xlabel('Time (Frames)');
 ylabel('Neuron');
 
