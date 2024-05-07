@@ -1,5 +1,17 @@
 # Calcium Imaging Analysis
 
+<table style="width: 100%;">
+   <tr>
+      <td style="width: 50%;">
+        <img src="/exampleTraceOutput.png" alt="Trace" style="width: 600px; height: 400px;">
+      </td>
+      <td style="width: 50%;">
+        <img src="/exampleRasterOutput.png" alt="Raster" style="width: auto; height: 400px;">
+      </td>
+   </tr>
+</table>
+
+
 ## Description
 This repository contains MATLAB scripts for analyzing calcium imaging videos in .tif format. The main script, `calciumImagingAnalysis.m`, processes the videos and generates a report file containing analysis results, as well as a .mat file containing spike train and calcium traces. Additionally, there is a configuration file, `config.m`, where the user can specify directory paths and filenames for input and output to batch process videos.
 
@@ -49,7 +61,3 @@ Example function calls:
 ## Notes
 - The configuration file (`yourname_config.m`) should be tailored to your specific directory structure and file names.
 - Ensure all dependencies are correctly installed and accessible in MATLAB's path.
-
-## Creator and Maintainer
-- Creator: Ray Gifford (October 2023)
-- Maintainer: Ray Gifford (up until February 2024)
