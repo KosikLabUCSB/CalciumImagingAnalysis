@@ -170,7 +170,7 @@ assert(~mod(size(Y,3),nSlices), "The number of slices specified does not seem ac
 
 nFrames = size(Y,3)/nSlices;
 
-Y = double(reshape(Y, [512,512,12,200])); % reshape Y
+Y = double(reshape(Y, [512,512,nSlices,nFrames])); % reshape Y
 
 
 
