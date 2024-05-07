@@ -45,11 +45,11 @@ Y = read_file(filename);
 data = CIA.Analysis.findNeurons(yNorm, P, filename, 'isVolume', true);
 %%
 % Output data
-saveToPath = strcat(folder, '/', baseFileName, '.mat');
+saveToPath = strcat(filename, '.mat');
 save(saveToPath, 'data');
-
+%%
 % Plot traces
 CIA.Visualization.plotTraces(data.trace, data.spikeTrain);
-
+%%
 % Plot spike train
-CIA.Visualization.plotSpikeTrain(data.trace, data.spikeTrain, 'heatmap', true);
+CIA.Visualization.plotSpikeTrain(data.trace, data.spikeTrain);

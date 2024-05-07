@@ -95,13 +95,14 @@ tempSpikeTrain = spikeTrain;
 zerosIndx = tempSpikeTrain(:,:)==0;
 
 for i = 1:nNeurons
-     y = linspace(1, length(tempTrace), length(tempTrace));
+     y = linspace(1, size(spikeTrain,2), size(spikeTrain,2));
      
      whenZero = zerosIndx(i,:);
      y(whenZero) = [];
      
      tempSpikeTrain2 = tempSpikeTrain(i,:);
      tempSpikeTrain2(whenZero) = [];
+     
      
      
      if(ip.Results.heatmap)
@@ -117,14 +118,13 @@ for i = 1:nNeurons
         end
         
         %markerColors(whenZero') = [];
-        
         scatter(y', tempSpikeTrain2*i, [], markerColors, "|", 'LineWidth', ip.Results.markerWidth);
         hold on;
 
         a = colorbar('eastoutside');
         ylabel(a,'Rescaled Flourescent Intensity','FontSize',14);
 
-    else
+     else
         scatter(y', tempSpikeTrain2*i, [], "|", 'black','LineWidth', ip.Results.markerWidth);
         hold on;
      end
