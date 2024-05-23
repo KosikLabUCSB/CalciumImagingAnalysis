@@ -1,0 +1,44 @@
+function vetttedData = removeSuNeurons(obj, fluorescenceMatrix, method, threshold)
+    % fluorescenceMatrix: nNeurons x time matrix of fluorescence data
+    % method: method for identifying outliers (e.g., 'baseline', 'frequency', 'correlation', 'peak', 'PCA')
+    % threshold: threshold value for identifying outliers
+    
+    vettedData = fluorescenceMatrix;
+
+    switch method
+        case 'baseline'
+            % Calculate baseline fluctuation (standard deviation)
+            baselineFluctuation = std(fluorescenceMatrix, 0, 2);
+            % Identify neurons with baseline fluctuation above threshold
+            badNeurons = find(baselineFluctuation > threshold);
+        case 'frequency'
+            % Calculate spiking frequency
+            spikeFrequency = sum(diff(fluorescenceMatrix > threshold), 2);
+            % Identify neurons with low spiking frequency
+            badNeurons = find(spikeFrequency < threshold);
+        case 'correlation'
+            % Compute pairwise correlation coefficients
+            correlationMatrix = corr(fluorescenceMatrix');
+            % Average correlation coefficient for each neuron
+            avgCorrelation = mean(correlationMatrix, 2);
+            % Identify neurons with low average correlation
+            badNeurons = find(avgCorrelation < threshold);
+        case 'peak'
+            % Identify peaks in fluorescence traces
+            [~,locs,~,~] = findpeaks(mean(fluorescenceMatrix, 1));
+            % Identify neurons with fewer peaks than threshold
+            badNeurons = find(sum(fluorescenceMatrix(:, locs) > threshold, 2) < threshold);
+        case 'PCA'
+            % Perform PCA
+            [~, score, ~, ~, explained] = pca(fluorescenceMatrix');
+            % Compute contribution of each neuron to principal components
+            contribution = score.^2 * (explained ./ sum(explained));
+            % Identify neurons with low contribution to dominant components
+            badNeurons = find(mean(contribution, 2) < threshold);
+        otherwise
+            error('Invalid method. Choose from ''baseline'', ''frequency'', ''correlation'', ''peak'', or ''PCA''.');
+    end
+
+    % Remove bad neurons from fluorescence matrix
+    vettedData(badNeurons, :) = [];
+end

@@ -22,27 +22,27 @@ clear all; close all; clc
 % Instantiate CalImgAnalysis object
 CIA = CalImgAnalysis;
 
-filename = 'postKCL_exampleVolume.tif';
-Y = read_file(filename);
+%filename = 'postKCL_exampleVolume.tif';
+%Y = read_file(filename);
 % Import example data by locating the PGRNKO_Example.tif file on your desktop
-%[filename, pathname] = uigetfile(...    
-%   {'*.jpg; *.JPG; *.jpeg; *.JPEG; *.img; *.IMG; *.tif; *.TIF; *.tiff, *.TIFF','Supported Files (*.jpg,*.img,*.tiff,)'; ...
-%    '*.tif','tif Files (*.tif)';...
-%    '*.TIF','TIF Files (*.TIF)';...
-%    '*.tiff','tiff Files (*.tiff)';...
-%    '*.TIFF','TIFF Files (*.TIFF)'},...    
-%    'MultiSelect', 'on');
+[filename, pathname] = uigetfile(...    
+   {'*.jpg; *.JPG; *.jpeg; *.JPEG; *.img; *.IMG; *.tif; *.TIF; *.tiff, *.TIFF','Supported Files (*.jpg,*.img,*.tiff,)'; ...
+    '*.tif','tif Files (*.tif)';...
+    '*.TIF','TIF Files (*.TIF)';...
+    '*.tiff','tiff Files (*.tiff)';...
+    '*.TIFF','TIFF Files (*.TIFF)'},...    
+    'MultiSelect', 'on');
 
 % Load Data
-%path = strcat(pathname,filename);
-%[folder, baseFileName, extension] = fileparts(path);
-%Y = read_file(path);
+path = strcat(pathname,filename);
+[folder, baseFileName, extension] = fileparts(path);
+Y = read_file(path);
 
 % Normalize data
-%[P,yNorm] = CIA.Preprocessing.normalize(Y);
+[P,yNorm] = CIA.Preprocessing.normalize(Y);
 %%
 % Find all neurons
-data = CIA.Analysis.findNeurons(yNorm, P, filename, 'isVolume', true);
+data = CIA.Analysis.findNeurons(Y, P, 'isVolume', true);
 %%
 % Output data
 saveToPath = strcat(filename, '.mat');

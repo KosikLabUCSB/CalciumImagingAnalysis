@@ -1,0 +1,38 @@
+function cleanedData = removeSusEpochs(obj, epochedData)
+
+    if nargin < 3
+            varianceThreshold = 80; % Default variance threshold
+        end
+
+        [numNeurons, numSpikeInstances, numTimePoints] = size(epochedData);
+        cleanedData = NaN(numNeurons, numSpikeInstances, numTimePoints);
+
+        for neuron = 1:numNeurons
+            neuronData = squeeze(epochedData(neuron, :, :));
+
+            % Remove rows with zero values across all time points
+            neuronData = neuronData(any(neuronData, 2), :);
+
+            % If neuronData is empty after removing zero rows, skip to the next neuron
+            if isempty(neuronData)
+                continue;
+            end
+
+            % Perform PCA without normalization
+            [coeff, score, ~, ~, explained] = pca(neuronData);
+            numComponents = find(cumsum(explained) >= varianceThreshold, 1);
+
+            % Reconstruct the data using the selected components
+            reconstructedData = score(:, 1:numComponents) * coeff(:, 1:numComponents)';
+
+            % Correct for sign inversions by comparing with the original data
+            for i = 1:numComponents
+                if mean(reconstructedData(:, i)) * mean(neuronData(:, i)) < 0
+                    reconstructedData(:, i) = -reconstructedData(:, i);
+                }
+            end
+
+            % Store the reconstructed data
+            cleanedData(neuron, 1:size(reconstructedData, 1), :) = reconstructedData;
+        end
+end

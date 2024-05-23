@@ -19,7 +19,7 @@ classdef Classification
 % N = CIA.Classification.findNeurons(X);
 %
 % Below are the list of classification functions contained in this class:
-%   - findNeurons()
+%   - clusterEpochs()
 %   
 
    properties

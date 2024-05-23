@@ -23,6 +23,7 @@ classdef CalImgAnalysis
        Classification;
        Visualization;
        Analysis;
+       Postprocessing;
    end
    methods
        function this = CalImgAnalysis()
@@ -30,6 +31,7 @@ classdef CalImgAnalysis
            this.Classification = Classification;
            this.Visualization = Visualization;
            this.Analysis = Analysis;
+           this.Postprocessing = Postprocessing;
        end
    end
 end

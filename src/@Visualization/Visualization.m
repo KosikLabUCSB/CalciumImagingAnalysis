@@ -22,6 +22,7 @@ classdef Visualization
 %   - plotTraces()
 %   - plotSpikeTrain()
 %   - plotClassificationRDM()
+%   - plotEpochedTraces()
 %   
 
    properties
