@@ -12,7 +12,7 @@ nNeurons = size(epochedData, 1);
 nSpikes = size(epochedData, 2);
 nFrames = size(epochedData, 3);
 
-disp(nSpikes);
+
 
 % Number of objects to plot
 num_to_plot = 5;

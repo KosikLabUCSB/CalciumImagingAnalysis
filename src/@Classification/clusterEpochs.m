@@ -11,17 +11,7 @@ function clusterEpochs(obj, epochedData, numClusters)
 % numClusters: number of clusters to find in by unsupervised clustering:
 % PCA aided kmeans clustering
 
-    % Replace NaNs with the mean of the non-NaN values for each neuron
-    for neuron = 1:size(epochedData, 1)
-        for spike = 1:size(epochedData, 2)
-            spikeData = squeeze(epochedData(neuron, spike, :));
-            nanIdx = isnan(spikeData);
-            if any(nanIdx)
-                spikeData(nanIdx) = mean(spikeData(~nanIdx));
-                epochedData(neuron, spike, :) = spikeData;
-            end
-        end
-    end
+    
 
     [nNeurons, nSpikeInstances, nTimePoints] = size(epochedData);
     

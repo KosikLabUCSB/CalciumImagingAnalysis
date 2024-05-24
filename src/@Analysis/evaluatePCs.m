@@ -80,6 +80,31 @@ function evaluatePCs(obj, epochedData)
     legend('Mean Spike', 'Synthetic Spike (PC3)');
     
     hold off;
+    
+% Assuming the variable of interest is called 'data' in the .mat file.
+data_matrix = cleanedEpochs; % Replace 'cleanedEpochs' with the actual variable name if different
+
+% Reshape the data to 2D
+reshaped_data = reshape(data_matrix, size(data_matrix, 1), []);
+
+% Perform PCA
+[coeff, score, ~] = pca(reshaped_data);
+
+% Use the first three principal components
+pca_data_3d = score(:, 1:3);
+
+% Perform k-means clustering
+k = 3; % Assuming 3 clusters
+clusters_3d = kmeans(pca_data_3d, k);
+
+% Plot the clustered data in PCA space (3D plot)
+figure;
+scatter3(pca_data_3d(:, 1), pca_data_3d(:, 2), pca_data_3d(:, 3), 50, clusters_3d, 'filled');
+title('K-Means Clustering in 3D PCA Space');
+xlabel('PCA1');
+ylabel('PCA2');
+zlabel('PCA3');
+colorbar;
 end
 
 function syntheticSpike = reconstruct_spike(meanSpike, coeff, score, pcIndex)

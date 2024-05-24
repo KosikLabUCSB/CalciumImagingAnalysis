@@ -69,45 +69,12 @@ function cleanedData = removeSusEpochs(obj, epochedData, confidence)
             cleanedDataMatrix(neuron, 1:size(neuronEpochs, 1), :) = neuronEpochs;
         end
     end
-
-    cleanedDataMatrix(isnan(cleanedDataMatrix)) = 0;
     
     % Return the cleaned data matrix
     cleanedData = cleanedDataMatrix;
     
     
- [nNeurons, nSpikeInstances, nTimePoints] = size(cleanedData);
-    
-    % Initialize cleanedData with NaNs
-    cleanedData2 = nan(nNeurons, nSpikeInstances, nTimePoints);
-    
-    for neuron = 1:nNeurons
-        neuronData = squeeze(cleanedData(neuron, :, :));
-        
-        % Find rows that are zero or constant
-        zeroRows = all(neuronData == 0, 2);
-        constantRows = all(neuronData == neuronData(:, 1), 2);
-        
-        % Keep rows that are not zero or constant
-        cleanedNeuronData = neuronData(~zeroRows & ~constantRows, :);
-        
-        % If there are no valid rows left, fill with small random noise
-       if isempty(cleanedNeuronData)
-            cleanedNeuronData = rand(nSpikeInstances, nTimePoints) * 1e-5; % Add small noise
-        end
-        
-        % Ensure the number of rows is consistent with nSpikeInstances
-        numValidSpikes = size(cleanedNeuronData, 1);
-        if numValidSpikes < nSpikeInstances
-            cleanedNeuronData = [cleanedNeuronData; zeros(nSpikeInstances - numValidSpikes, nTimePoints)];
-        end
-        
-        % Assign cleaned data back to the cleanedData matrix
-        cleanedData2(neuron, :, :) = cleanedNeuronData;
-    end
-    
-     % Replace any remaining NaNs with small random noise
-    cleanedData(isnan(cleanedData)) = rand(sum(isnan(cleanedData(:))), 1) * 1e-5;
+ 
     
    
 end

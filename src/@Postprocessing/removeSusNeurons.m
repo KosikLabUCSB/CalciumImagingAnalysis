@@ -12,7 +12,10 @@ function [vettedTrace,vettedSpikeTrain]  = removeSusNeurons(obj, data, method, t
     
     vettedTrace = data.trace;
     vettedSpikeTrain = data.spikeTrain;
-    tempMatrix = data.rawTrace(:,30:end-5);
+    tempMatrix = data.trace(:,5:end-5);
+    
+    
+    %tempMatrix = data.rawTrace(:,30:end-5);
 
     switch method
         case 'baseline'
@@ -20,12 +23,25 @@ function [vettedTrace,vettedSpikeTrain]  = removeSusNeurons(obj, data, method, t
             baselineFluctuation = std(tempMatrix, 0, 2);
             % Identify neurons with baseline fluctuation above threshold
             badNeurons = find(baselineFluctuation > threshold);
-        case 'frequency'
+            
+            disp("Neuron(s) Removed:")
+            disp(badNeurons);
+        case 'frequency' % default threshold should be 3 for z-score
             % Calculate spiking frequency
-            spikeFrequency = sum(diff(tempMatrix > threshold), 2);
-            % Identify neurons with low spiking frequency
-            badNeurons = find(spikeFrequency < threshold);
-        case 'correlation'
+            spikeFrequency = sum(vettedSpikeTrain, 2);
+            
+            % Calculate the Z-score for the total contributions
+            meanFreq = mean(spikeFrequency);
+            stdFreq = std(spikeFrequency);
+            z_scores = (spikeFrequency - meanFreq) / stdFreq;
+
+            % Set Z-score threshold (e.g., ±3 for outliers)
+            badNeurons = find(abs(z_scores) > threshold);
+            
+            disp("Neuron(s) Removed:")
+            disp(badNeurons);
+            
+        case 'correlation' % default should be less than 0.4 (40%) correlation
            % Compute standard deviation to exclude neurons with low baseline
             baselineFluctuation = std(tempMatrix, 0, 2);
             % Find neurons with low baseline fluctuations
@@ -42,6 +58,9 @@ function [vettedTrace,vettedSpikeTrain]  = removeSusNeurons(obj, data, method, t
             % Identify neurons with low average correlation
             badNeurons = validNeurons(avgCorrelation < threshold);
             
+            disp("Neuron(s) Removed:")
+            disp(badNeurons);
+            
         case 'peak'
              % Identify peaks in fluorescence traces for each neuron
             numNeurons = size(vettedTrace, 1);
@@ -53,13 +72,30 @@ function [vettedTrace,vettedSpikeTrain]  = removeSusNeurons(obj, data, method, t
             % Identify neurons with fewer peaks than the threshold
             badNeurons = find(numPeaks < threshold);
             
+            disp("Neuron(s) Removed:")
+            disp(badNeurons);
+            
         case 'PCA'
             % Perform PCA
             [~, score, ~, ~, explained] = pca(tempMatrix');
-            % Compute contribution of each neuron to principal components
-            contribution = score.^2 * (explained ./ sum(explained));
-            % Identify neurons with low contribution to dominant components
-            badNeurons = find(mean(contribution, 2) < threshold);
+
+            % Compute the contribution of each neuron to principal components
+            % Normalize explained to be a column vector if necessary
+            explained = explained(:);
+
+            % Calculate the contribution
+            contribution = bsxfun(@times, score.^2, explained' / sum(explained));
+
+            
+            % Summarize the contributions across the components
+            total_contribution = sum(contribution, 1);
+            
+            % threshold
+            badNeurons = find(total_contribution < threshold);
+            
+            disp("Neuron(s) Removed:")
+            disp(badNeurons);
+            
         otherwise
             error('Invalid method. Choose from ''baseline'', ''frequency'', ''correlation'', ''peak'', or ''PCA''.');
     end

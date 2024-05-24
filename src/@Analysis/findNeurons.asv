@@ -62,7 +62,7 @@ ip.FunctionName = 'findNeurons';
 ip.addRequired('Y');
 ip.addRequired('P',@isstruct);
 %ip.addRequired('filename',@ischar);
-ip.addParameter('isVolume', false, @(x) validateattributes(x,{'logical'}, {'nonempty'}));
+ip.addParameter('isVolume', false, @ischar);
 ip.addParameter('nSlices',[], @(x) validateattributes(x,{'numeric'}, {'nonempty'}));
 
 % parse user inputs
@@ -89,6 +89,11 @@ if ~ip.Results.isVolume
             'cnn_thr',0.2,...                           % threshold for CNN classifier
             'make_avi', 1);           % can be used to make avi, doesn't work super well
 
+    % find correlation image
+    Cn =  correlation_image(Y);
+    
+    % find dims of input
+    dims = size(Y);
     
     % fast initialization of spatial components using greedyROI and HALS
     [Ain,Cin,bin,fin,center] = initialize_components(double(Y),K,tau,options,P);  % initialize
@@ -127,12 +132,7 @@ if ~ip.Results.isVolume
     % merge found components
     P.merg_thr = 0.95;
     [Am,Cm,K_m,merged_ROIs,Pm,Sm] = merge_components(YrA,A_keep,b,C_keep,f,P,S,options);
-
-    % update
-    Pm.p = P.p;    % restore AR value
-    [A2,b2,C2] = update_spatial_components(Yr,Cm,f,[Am,b],Pm,options);
-    [C2,f2,P2,S2,YrA2] = update_temporal_components(Yr,A2,b2,C2,f,Pm,options);
-       
+ 
     % refine estimates excluding rejected components
     Pm.p = P.p;    % restore AR value
     [A2,b2,C2] = update_spatial_components(Yr,Cm,f,[Am,b],Pm,options);
@@ -170,6 +170,11 @@ if ~ip.Results.isVolume
     data.rawTrace = F_dff;
     data.spikeTrain = S>0;
     data.centers = centerM;
+    data.background = Cn;
+    data.labels = linspace(1,size(C_dec,1), size(C_dec,1));
+    data.spatialComponents = A_or;
+    data.dims = dims;
+    data.options = options;
     
 
     % output mat file with struct
@@ -281,10 +286,11 @@ data.trace = C_dec;
 data.rawTrace = F_dff;
 data.spikeTrain = S>0;
 data.centers = centerM;
-
 data.background = Cn;
-data.labels = linspace(1:size(C_dec,1), size(C_dec,1)
-
+data.labels = linspace(1, size(C_dec,1), size(C_dec,1));
+data.spatialComponents = A2;
+data.dims = dims;
+data.options = options;
 
 
 end
