@@ -1,4 +1,4 @@
-function [CM, Mdl] = crossvalidateMulti(obj, epochedData, vargin)
+function [CM, Mdl] = crossvalidateMulti(obj, epochedData, varargin)
 % -------------------------------------------------------------------------
 % CIA = CalImgAnalysis;
 % C = CIA.Classification.crossvalidateMulti(epochedData, classifier, oversample, extractFeatures)
@@ -19,6 +19,12 @@ function [CM, Mdl] = crossvalidateMulti(obj, epochedData, vargin)
 % - extractFeatures: a boolean specifying whether or not to extract
 %   additional features for classification: mean, variance, peak-to-peak
 %   amplitude, RMS [root mean squared]. Default: false.
+% - kernel: a string specifying the kernel type for SVM classification.
+%   Default: 'rbf'. Possible inputs: 'linear', 'rbf'
+% - gridSearch: a boolean specifying whether or not to perform a grid search
+%   over hyperparameters in SVM and RF classification. Default: false.
+% - maxEvaluations: number of evaluations to conduct in grid search.
+%   Default: 50
 %
 % Outputs:
 % - CM: the confusion matrix from classifcaiton.
@@ -29,14 +35,23 @@ ip = inputParser;
 
 % set default values
 ip.FunctionName = 'crossvalidateMulti';
-ip.addRequired('epochedData',@ismatrix);
+ip.addRequired('epochedData',@(x) validateattributes(x,{'numeric'}, {'nonempty'}));
 ip.addParameter('classifier', 'LDA', @ischar);
 ip.addParameter('oversample', false, @(x) validateattributes(x,{'logical'}, {'nonempty'}));
 ip.addParameter('extractFeatures', false, @(x) validateattributes(x,{'logical'}, {'nonempty'}));
+ip.addParameter('kernel', 'rbf', @ischar);
+ip.addParameter('gridSearch', false, @(x) validateattributes(x,{'logical'}, {'nonempty'}));
+ip.addParameter('maxEvaluations', 50, @(x) validateattributes(x,{'numeric'}, {'nonempty'}));
 
-% Example synthetic data (replace with your actual data)
+
+parse(ip,epochedData,varargin{:});
+
+classifier = lower(ip.Results.classifier);
+kernel = lower(ip.Results.kernel);
+maxEvaluations = ip.Results.maxEvaluations;
+
 %calcium_traces = rand(10, 5, 50); % (10 neurons, 5 spikes, 50 frames)
-tempEpochs = normEpochs;
+tempEpochs = epochedData;
 tempEpochs(29,:,:)= [];
 [nNeurons, nSpikes, nFrames] = size(tempEpochs);
 
@@ -57,52 +72,83 @@ classCounts = classDist(:, 2); % Second column contains the counts
 % Calculate class weights
 classWeights = maxCount ./ classCounts; % Inverse of class frequency
 
-% Oversample minority classes
-X_oversampled = X;
-Y_oversampled = Y;
+if ip.Results.oversample
+    
+    % Oversample minority classes
+    X_oversampled = X;
+    Y_oversampled = Y;
 
-for class = unique(Y)'
-    if classCounts(class) < maxCount
-        % Calculate how many more samples we need
-        numToAdd = maxCount - classCounts(class);
-        % Randomly sample with replacement
-        idx = find(Y == class);
-        addIdx = randsample(idx, numToAdd, true);
-        % Add these samples to the dataset
-        X_oversampled = [X_oversampled; X(addIdx, :)];
-        Y_oversampled = [Y_oversampled; Y(addIdx)];
+    for class = unique(Y)'
+        if classCounts(class) < maxCount
+            % Calculate how many more samples we need
+            numToAdd = maxCount - classCounts(class);
+            % Randomly sample with replacement
+            idx = find(Y == class);
+            addIdx = randsample(idx, numToAdd, true);
+            % Add these samples to the dataset
+            X_oversampled = [X_oversampled; X(addIdx, :)];
+            Y_oversampled = [Y_oversampled; Y(addIdx)];
+        end
     end
+
+    X = X_oversampled;
+    Y = Y_oversampled;
+
 end
 
-X = X_oversampled;
-Y = Y_oversampled;
+if ip.Results.extractFeatures
+    % Extract additional features
+    X_features = extractFeatures(X);
+    X = [X, X_features];
 
+    % Split data into training and testing sets
+    cv = cvpartition(Y, 'HoldOut', 0.3);
+    X_train = X(training(cv), :);
+    Y_train = Y(training(cv));
+    X_test = X(test(cv), :);
+    Y_test = Y(test(cv));
+end
+disp(classifier);
+switch classifier
+        case 'lda'
+        
+        % Train the LDA model
+        Mdl = fitcdiscr(X_train, Y_train);
+        
+        case 'svm'
+          
+            if ip.Results.gridSearch
+                % Define the SVM template with a different kernel (e.g., RBF)
+                t = templateSVM('KernelFunction', kernel, 'Standardize', true);
 
-% Extract additional features
-X_features = extractFeatures(X);
-X = [X, X_features];
+                % Specify hyperparameter optimization options
+                hyperOpts = struct('AcquisitionFunctionName', 'expected-improvement-plus', ...
+                                   'MaxObjectiveEvaluations', maxEvaluations);
 
-% Split data into training and testing sets
-cv = cvpartition(Y, 'HoldOut', 0.3);
-X_train = X(training(cv), :);
-Y_train = Y(training(cv));
-X_test = X(test(cv), :);
-Y_test = Y(test(cv));
+                % Train the ECOC model with hyperparameter optimization
+                Mdl = fitcecoc(X_train, Y_train, 'Learners', t, ...
+                               'OptimizeHyperparameters', 'all', ...
+                               'HyperparameterOptimizationOptions', hyperOpts);
+            else
+                % Define the SVM template with a different kernel (e.g., RBF)
+                t = templateSVM('KernelFunction', kernel, 'Standardize', true);
+                
+                % Train the ECOC model
+                Mdl = fitcecoc(X_train, Y_train, 'Learners', t);
+            end
+            
+            
+            
+        %case 'rf'
+   
+end
 
-if 
-
-% Train the LDA model
-Mdl = fitcdiscr(X_train, Y_train);
 
 % Predict on the test data
 Y_pred = predict(Mdl, X_test);
 
 % Obtain the confusion matrix
 confMat = confusionmat(Y_test, Y_pred);
-
-% Display the confusion matrix
-disp('Confusion Matrix:');
-disp(confMat);
 
 % Plot the confusion matrix
 figure;
